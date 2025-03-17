@@ -7,16 +7,21 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
+import ru.systemoteh.checklocallicence.config.AppConfig;
+import ru.systemoteh.checklocallicence.crypto.DateCrypto;
+
+import javax.crypto.SecretKey;
+import java.time.LocalDate;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class CheckLocalLicenceService {
 
+    private final SecretKey secretKey;
+    private final AppConfig.EncryptionProperties properties;
     private final ApplicationContext context;
-    private final ThreadPoolTaskExecutor taskExecutor; // Ваш пул потоков (если есть)
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
@@ -36,8 +41,14 @@ public class CheckLocalLicenceService {
     }
 
     private boolean isLocalLicenceExpired() {
-        // todo получить зашифрованную дату и сравнить с текущей
-        return true;
+        try {
+            LocalDate storedDate = DateCrypto.decryptDate(properties.getEncryptedDate(), secretKey);
+            LocalDate currentDate = LocalDate.now();
+            return currentDate.isAfter(storedDate);
+        } catch (Exception e) {
+            log.error("Couldn't get date", e);
+            return true;
+        }
     }
 
     public void stop() {
