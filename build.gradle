@@ -1,15 +1,19 @@
+// build.gradle
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.3'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.graalvm.buildtools.native' version '0.9.28'
 }
 
 group = 'ru.systemoteh'
-version = '0.0.2'
+version = '2'
 
+// Укажите явно Java Toolchain для GraalVM
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
+        vendor = JvmVendorSpec.matching("GraalVM Community")
     }
 }
 
@@ -18,6 +22,7 @@ repositories {
 }
 
 dependencies {
+    implementation('org.springframework.boot:spring-boot-starter')
     implementation 'org.springframework.boot:spring-boot-starter-web:3.4.3'
     implementation 'org.springframework.boot:spring-boot-starter-parent:3.4.3'
     implementation 'org.springframework.boot:spring-boot-starter-logging:3.4.3'
@@ -27,6 +32,20 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.36'
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
+
+
+graalvmNative {
+    toolchainDetection = false // Отключите автоопределение
+    binaries {
+        main {
+            javaLauncher = javaToolchains.launcherFor {
+                languageVersion = JavaLanguageVersion.of(21)
+                vendor = JvmVendorSpec.matching("GraalVM Community")
+                buildArgs.add('--verbose')
+                buildArgs.add('-H:EnableURLProtocols=http,https')
+                buildArgs.add('-H:+ReportExceptionStackTraces')
+                buildArgs.add('--allow-incomplete-classpath')
+            }
+        }
+    }
 }
