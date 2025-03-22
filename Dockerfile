@@ -6,7 +6,7 @@ RUN microdnf install findutils
 RUN ./gradlew nativeCompile -Pgraalvm
 
 # Stage 2: Runtime
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 WORKDIR /app
 COPY --from=builder /app/build/native/nativeCompile/check-local-licence /app/check-local-licence
 RUN chmod +x /app/check-local-licence
